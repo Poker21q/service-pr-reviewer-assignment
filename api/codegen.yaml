@@ -1,4 +1,4 @@
-package: api
+package: dto
 generate:
   models: true
-output: internal/generated/api/dto.go
+output: internal/generated/api/dto/dto.go

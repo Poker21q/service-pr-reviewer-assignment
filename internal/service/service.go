@@ -1,13 +1,13 @@
 package service
 
-type repository interface{}
-
 type Service struct {
-	repo repository
+	storage   storage
+	txManager txManager
 }
 
-func New(repository repository) *Service {
+func MustNew(storage storage, txManager txManager) *Service {
 	return &Service{
-		repo: repository,
+		storage:   storage,
+		txManager: txManager,
 	}
 }

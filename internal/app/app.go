@@ -11,16 +11,19 @@ import (
 	"syscall"
 	"time"
 
+	"service-pr-reviewer-assignment/internal/pkg/querier"
+
 	"service-pr-reviewer-assignment/internal/app/config"
 	"service-pr-reviewer-assignment/internal/app/postgres"
+	"service-pr-reviewer-assignment/internal/app/router"
+	"service-pr-reviewer-assignment/internal/pkg/tx"
 	"service-pr-reviewer-assignment/internal/service"
 	"service-pr-reviewer-assignment/internal/storage"
 	"service-pr-reviewer-assignment/pkg/log"
+
+	"github.com/avito-tech/go-transaction-manager/pgxv5"
 )
 
-// Run — точка запуска приложения.
-// Реализован graceful shutdown по рекомендациям разработчика victoriametrics
-// https://victoriametrics.com/blog/go-graceful-shutdown/
 func Run(cfg *config.Config) error {
 	const (
 		shutdownPeriod      = 15 * time.Second
@@ -33,7 +36,7 @@ func Run(cfg *config.Config) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
-	logger := log.NewLogger()
+	logger := log.MustNewLogger()
 
 	pg, err := postgres.NewConnPool(ctx, cfg.Postgres)
 	if err != nil {
@@ -41,64 +44,56 @@ func Run(cfg *config.Config) error {
 	}
 	defer pg.Close()
 
-	st := storage.New(pg)
-	svc := service.New(st)
+	txManager := tx.MustNewManager(pg)
+	q := querier.MustNew(pg, pgxv5.DefaultCtxGetter)
+	st := storage.MustNew(q)
+	svc := service.MustNew(st, txManager)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Server.Port),
-		Handler: initRouter(svc, ctx),
+		Handler: router.MustNew(logger, svc),
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
 	}
 
-	serverErrCh := make(chan error, 1)
+	serverErrors := make(chan error, 1)
 
 	go func() {
-		logger.Info(
-			fmt.Sprintf("server listening on :%s", cfg.Server.Port),
-		)
+		logger.InfoContext(ctx, "server listening on :"+cfg.Server.Port)
 
-		err := server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serverErrCh <- fmt.Errorf("server error: %w", err)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrors <- fmt.Errorf("server error: %w", err)
 			return
 		}
 
-		close(serverErrCh)
+		close(serverErrors)
 	}()
 
 	select {
 	case <-ctx.Done():
-		logger.Info("shutdown signal received")
+		logger.InfoContext(ctx, "shutdown signal received")
 
-	case err = <-serverErrCh:
+	case err := <-serverErrors:
 		if err != nil {
 			return fmt.Errorf("server failed: %w", err)
 		}
-		logger.Info("server stopped normally")
+		logger.InfoContext(ctx, "server stopped normally")
 		return nil
 	}
 
 	isShuttingDown.Store(true)
+	logger.InfoContext(ctx, "draining ongoing requests...")
 	time.Sleep(readinessDrainDelay)
-	logger.Info("draining ongoing requests...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownPeriod)
 	defer cancel()
 
-	err = server.Shutdown(shutdownCtx)
-	if err != nil {
-		logger.Info(
-			fmt.Sprintf("graceful shutdown failed: %v", err),
-		)
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.InfoContext(ctx, fmt.Sprintf("graceful shutdown failed: %v", err))
 		time.Sleep(shutdownHardPeriod)
 	}
 
-	logger.Info("server stopped gracefully")
-	return nil
-}
-
-func initRouter(a, b interface{}) http.Handler {
+	logger.InfoContext(ctx, "server stopped gracefully")
 	return nil
 }

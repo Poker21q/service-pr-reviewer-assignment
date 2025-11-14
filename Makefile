@@ -12,7 +12,7 @@ OAPI_CODEGEN_BIN := $(BIN_DIR)/oapi-codegen$(BIN_EXT)
 GOFUMPT_BIN := $(BIN_DIR)/gofumpt$(BIN_EXT)
 GOOSE_BIN := $(BIN_DIR)/goose$(BIN_EXT)
 
-API_SCHEMA := schema.yaml
+API_SCHEMA := openapi.yaml
 CODEGEN_CONFIG := codegen.yaml
 
 ifneq (,$(wildcard .env))

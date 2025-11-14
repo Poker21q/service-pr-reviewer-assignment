@@ -1,3 +1,4 @@
+// nolint
 package log
 
 import (
@@ -17,7 +18,7 @@ var (
 	once         sync.Once
 )
 
-func NewLogger() *Logger {
+func MustNewLogger() *Logger {
 	handler := slog.NewJSONHandler(os.Stdout, nil)
 	return &Logger{logger: slog.New(handler)}
 }
@@ -25,59 +26,92 @@ func NewLogger() *Logger {
 func getGlobalLogger() *Logger {
 	if globalLogger == nil {
 		once.Do(func() {
-			globalLogger = NewLogger()
+			globalLogger = MustNewLogger()
 		})
 	}
 	return globalLogger
 }
 
-func (l *Logger) Info(msg string, fields ...Field) {
-	l.logger.Info(msg, fieldsToAny(fields)...)
+func (l *Logger) InfoContext(ctx context.Context, msg string) {
+	l.logger.Info(msg, extractFields(ctx))
 }
 
-func (l *Logger) Warn(msg string, fields ...Field) {
-	l.logger.Warn(msg, fieldsToAny(fields)...)
+func (l *Logger) WarnContext(ctx context.Context, msg string) {
+	l.logger.Warn(msg, extractFields(ctx))
 }
 
-func (l *Logger) Error(err string, fields ...Field) {
-	l.logger.Error(err, fieldsToAny(fields)...)
+func (l *Logger) ErrorContext(ctx context.Context, msg string) {
+	l.logger.Error(msg, extractFields(ctx))
 }
 
-func (l *Logger) InfoContext(ctx context.Context, msg string, fields ...Field) {
-	all := append(extractFields(ctx), fieldsToAny(fields)...)
-	l.logger.Info(msg, all...)
+func Info(msg string) {
+	getGlobalLogger().InfoContext(context.Background(), msg)
 }
 
-func (l *Logger) DebugContext(ctx context.Context, msg string, fields ...Field) {
-	all := append(extractFields(ctx), fieldsToAny(fields)...)
-	l.logger.Debug(msg, all...)
+func Warn(msg string) {
+	getGlobalLogger().WarnContext(context.Background(), msg)
 }
 
-func (l *Logger) ErrorContext(ctx context.Context, msg string, fields ...Field) {
-	all := append(extractFields(ctx), fieldsToAny(fields)...)
-	l.logger.Error(msg, all...)
+func Error(msg string) {
+	getGlobalLogger().ErrorContext(context.Background(), msg)
 }
 
-func Info(msg string, fields ...Field) {
-	getGlobalLogger().Info(msg, fields...)
+func InfoContext(ctx context.Context, msg string) {
+	getGlobalLogger().InfoContext(ctx, msg)
 }
 
-func Warn(msg string, fields ...Field) {
-	getGlobalLogger().Warn(msg, fields...)
+func WarnContext(ctx context.Context, msg string) {
+	getGlobalLogger().WarnContext(ctx, msg)
 }
 
-func Error(err string, fields ...Field) {
-	getGlobalLogger().Error(err, fields...)
+func ErrorContext(ctx context.Context, msg string) {
+	getGlobalLogger().ErrorContext(ctx, msg)
 }
 
-func InfoContext(ctx context.Context, msg string, fields ...Field) {
-	getGlobalLogger().InfoContext(ctx, msg, fields...)
+type Field interface {
+	Key() string
+	Value() any
 }
 
-func DebugContext(ctx context.Context, msg string, fields ...Field) {
-	getGlobalLogger().DebugContext(ctx, msg, fields...)
+type simpleField struct {
+	key string
+	val any
 }
 
-func ErrorContext(ctx context.Context, msg string, fields ...Field) {
-	getGlobalLogger().ErrorContext(ctx, msg, fields...)
+func (f simpleField) Key() string { return f.key }
+func (f simpleField) Value() any  { return f.val }
+
+// NewField создает новое поле
+func NewField(key string, value any) Field {
+	return simpleField{key: key, val: value}
+}
+
+func fieldsToAny(fields []Field) []any {
+	out := make([]any, 0, len(fields)*2)
+	for _, f := range fields {
+		out = append(out, f.Key(), f.Value())
+	}
+	return out
+}
+
+type ctxKeyType struct{}
+
+var ctxKey = ctxKeyType{}
+
+func WithContext(ctx context.Context, fields ...Field) context.Context {
+	existing, _ := ctx.Value(ctxKey).([]any)
+	for _, f := range fields {
+		existing = append(existing, f.Key(), f.Value())
+	}
+	return context.WithValue(ctx, ctxKey, existing)
+}
+
+func extractFields(ctx context.Context) []any {
+	if ctx == nil {
+		return nil
+	}
+	if fields, ok := ctx.Value(ctxKey).([]any); ok {
+		return fields
+	}
+	return nil
 }
