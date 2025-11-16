@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"service-pr-reviewer-assignment/internal/api/handlers/not_found"
+
 	"service-pr-reviewer-assignment/internal/pkg/graceful_shutdown"
 
 	"service-pr-reviewer-assignment/internal/api/handlers/healthcheck"
@@ -45,7 +47,7 @@ func Must(
 	router.Handle("/pullRequest/create", pullrequest_create.NewHandler(logger, service)).Methods(http.MethodPost)
 	router.Handle("/pullRequest/merge", pullrequest_merge.NewHandler(logger, service)).Methods(http.MethodPost)
 
-	router.NotFoundHandler = http.NotFoundHandler()
+	router.NotFoundHandler = not_found.NewHandler(logger)
 
 	return router
 }

@@ -52,14 +52,6 @@ func PullRequestToDTO(pr *entities.PullRequest, reviewerIDs []uuid.UUID) dto.Pul
 	}
 }
 
-func UUIDsToStrings(uuids []uuid.UUID) []string {
-	out := make([]string, 0, len(uuids))
-	for i := range uuids {
-		out = append(out, uuids[i].String())
-	}
-	return out
-}
-
 func PullRequestStatusToDTO(status entities.PullRequestStatus) dto.PullRequestStatus {
 	switch status {
 	case entities.PullRequestStatusOpen:

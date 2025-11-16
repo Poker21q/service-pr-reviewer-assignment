@@ -9,6 +9,7 @@ import (
 	"service-pr-reviewer-assignment/internal/app/config"
 	"service-pr-reviewer-assignment/pkg/log"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -31,6 +32,7 @@ func NewConnPool(ctx context.Context, cfg config.Postgres, logger *log.Logger) (
 	pgxCfg.MaxConnIdleTime = 30 * time.Minute
 	pgxCfg.HealthCheckPeriod = time.Minute
 	pgxCfg.ConnConfig.ConnectTimeout = 5 * time.Second
+	pgxCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		pool, err := pgxpool.NewWithConfig(ctx, pgxCfg)

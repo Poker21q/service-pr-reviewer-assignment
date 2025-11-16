@@ -63,11 +63,11 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	serverErrors := make(chan error, 1)
 	go runServer(ctx, logger, server, cfg.Server.Port, serverErrors)
 
-	if err := waitForShutdown(ctx, serverErrors, &isShuttingDown); err != nil {
+	if err := waitForShutdown(ctx, serverErrors); err != nil {
 		return fmt.Errorf("wait for shutdown: %w", err)
 	}
 
-	if err := shutdownServer(ctx, logger, server); err != nil {
+	if err := shutdownServer(ctx, logger, server, &isShuttingDown); err != nil {
 		return fmt.Errorf("shutdown server: %w", err)
 	}
 
@@ -85,11 +85,7 @@ func runServer(ctx context.Context, logger *log.Logger, server *http.Server, por
 	close(errorsCh)
 }
 
-func waitForShutdown(ctx context.Context, serverErrors <-chan error, isShuttingDown *atomic.Bool) error {
-	defer func() {
-		isShuttingDown.Store(true)
-	}()
-
+func waitForShutdown(ctx context.Context, serverErrors <-chan error) error {
 	select {
 	case <-ctx.Done():
 		return nil
@@ -98,10 +94,11 @@ func waitForShutdown(ctx context.Context, serverErrors <-chan error, isShuttingD
 	}
 }
 
-func shutdownServer(ctx context.Context, logger *log.Logger, server *http.Server) error {
+func shutdownServer(ctx context.Context, logger *log.Logger, server *http.Server, isShuttingDown *atomic.Bool) error {
 	logger.InfoContext(ctx, "shutdown signal received")
 
 	time.Sleep(readinessDrainDelay)
+	isShuttingDown.Store(true)
 	logger.InfoContext(ctx, "draining ongoing requests...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownPeriod)
