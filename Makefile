@@ -29,7 +29,7 @@ GOOSE_DBSTRING := postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HO
 all: tidy codegen lint fmt devenv-start
 
 tidy:
-	go mod tidy
+	@go mod tidy
 
 devenv-start:
 	@cp -f .env.example .env
