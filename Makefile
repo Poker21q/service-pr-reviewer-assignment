@@ -24,11 +24,9 @@ GOOSE_DRIVER := postgres
 
 GOOSE_DBSTRING := postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)
 
-.PHONY: all dev devenv-start debug tools codegen fmt lint migrate-up migrate-down migrate-status
+.PHONY: all devenv-start tools codegen fmt lint migrate-up migrate-down migrate-status
 
-all: codegen lint fmt
-
-dev: devenv-start debug
+all: codegen lint fmt devenv-start
 
 devenv-start:
 	@cp -f .env.example .env
