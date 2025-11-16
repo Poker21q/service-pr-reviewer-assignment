@@ -68,7 +68,7 @@ make all  # кодогенерация, линтинг, форматирован
 
 ### Запуск сервиса с PostgreSQL
 ```bash
-docker-compose up
+make run
 ```
 
 ### Применение миграций
