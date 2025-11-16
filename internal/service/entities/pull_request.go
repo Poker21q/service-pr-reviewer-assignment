@@ -1,6 +1,10 @@
 package entities
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // PullRequest представляет сущность Pull Request (PR).
 type PullRequest struct {
@@ -16,11 +20,11 @@ type PullRequest struct {
 	// Status статус PR: open или merged.
 	Status PullRequestStatus
 
-	// ReviewerIDs список назначенных ревьюверов.
-	ReviewerIDs []uuid.UUID
+	// CreatedAt время создания
+	CreatedAt time.Time
 
-	// NeedMoreReviewers флаг того, что нужно больше ревьюверов.
-	NeedMoreReviewers bool
+	// MergedAt время мерджа
+	MergedAt *time.Time
 }
 
 // PullRequestStatus задает статус PR.
@@ -33,3 +37,8 @@ const (
 	// PullRequestStatusMerged PR смержен.
 	PullRequestStatusMerged PullRequestStatus = "merged"
 )
+
+type PullRequestReviewer struct {
+	ReviewerID    uuid.UUID
+	PullRequestID uuid.UUID
+}

@@ -5,21 +5,21 @@ package dto
 
 import (
 	"time"
-)
 
-const (
-	AdminTokenScopes = "AdminToken.Scopes"
-	UserTokenScopes  = "UserToken.Scopes"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for ErrorResponseErrorCode.
 const (
-	NOCANDIDATE ErrorResponseErrorCode = "NO_CANDIDATE"
-	NOTASSIGNED ErrorResponseErrorCode = "NOT_ASSIGNED"
-	NOTFOUND    ErrorResponseErrorCode = "NOT_FOUND"
-	PREXISTS    ErrorResponseErrorCode = "PR_EXISTS"
-	PRMERGED    ErrorResponseErrorCode = "PR_MERGED"
-	TEAMEXISTS  ErrorResponseErrorCode = "TEAM_EXISTS"
+	BADREQUEST      ErrorResponseErrorCode = "BAD_REQUEST"
+	DUPLICATEUSERID ErrorResponseErrorCode = "DUPLICATE_USER_ID"
+	INTERNALERROR   ErrorResponseErrorCode = "INTERNAL_ERROR"
+	NOCANDIDATE     ErrorResponseErrorCode = "NO_CANDIDATE"
+	NOTASSIGNED     ErrorResponseErrorCode = "NOT_ASSIGNED"
+	NOTFOUND        ErrorResponseErrorCode = "NOT_FOUND"
+	PREXISTS        ErrorResponseErrorCode = "PR_EXISTS"
+	PRMERGED        ErrorResponseErrorCode = "PR_MERGED"
+	TEAMEXISTS      ErrorResponseErrorCode = "TEAM_EXISTS"
 )
 
 // Defines values for PullRequestStatus.
@@ -34,6 +34,13 @@ const (
 	PullRequestShortStatusOPEN   PullRequestShortStatus = "OPEN"
 )
 
+// CreatePullRequestRequest defines model for CreatePullRequestRequest.
+type CreatePullRequestRequest struct {
+	AuthorId        openapi_types.UUID `json:"author_id"`
+	PullRequestId   openapi_types.UUID `json:"pull_request_id"`
+	PullRequestName string             `json:"pull_request_name"`
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Error struct {
@@ -45,16 +52,21 @@ type ErrorResponse struct {
 // ErrorResponseErrorCode defines model for ErrorResponse.Error.Code.
 type ErrorResponseErrorCode string
 
+// MergePullRequestRequest defines model for MergePullRequestRequest.
+type MergePullRequestRequest struct {
+	PullRequestId openapi_types.UUID `json:"pull_request_id"`
+}
+
 // PullRequest defines model for PullRequest.
 type PullRequest struct {
 	// AssignedReviewers user_id назначенных ревьюверов (0..2)
-	AssignedReviewers []string          `json:"assigned_reviewers"`
-	AuthorId          string            `json:"author_id"`
-	CreatedAt         *time.Time        `json:"createdAt"`
-	MergedAt          *time.Time        `json:"mergedAt"`
-	PullRequestId     string            `json:"pull_request_id"`
-	PullRequestName   string            `json:"pull_request_name"`
-	Status            PullRequestStatus `json:"status"`
+	AssignedReviewers []openapi_types.UUID `json:"assigned_reviewers"`
+	AuthorId          openapi_types.UUID   `json:"author_id"`
+	CreatedAt         *time.Time           `json:"createdAt"`
+	MergedAt          *time.Time           `json:"mergedAt"`
+	PullRequestId     openapi_types.UUID   `json:"pull_request_id"`
+	PullRequestName   string               `json:"pull_request_name"`
+	Status            PullRequestStatus    `json:"status"`
 }
 
 // PullRequestStatus defines model for PullRequest.Status.
@@ -62,14 +74,34 @@ type PullRequestStatus string
 
 // PullRequestShort defines model for PullRequestShort.
 type PullRequestShort struct {
-	AuthorId        string                 `json:"author_id"`
-	PullRequestId   string                 `json:"pull_request_id"`
+	AuthorId        openapi_types.UUID     `json:"author_id"`
+	PullRequestId   openapi_types.UUID     `json:"pull_request_id"`
 	PullRequestName string                 `json:"pull_request_name"`
 	Status          PullRequestShortStatus `json:"status"`
 }
 
 // PullRequestShortStatus defines model for PullRequestShort.Status.
 type PullRequestShortStatus string
+
+// ReassignPullRequestRequest defines model for ReassignPullRequestRequest.
+type ReassignPullRequestRequest struct {
+	OldUserId     openapi_types.UUID `json:"old_user_id"`
+	PullRequestId openapi_types.UUID `json:"pull_request_id"`
+}
+
+// ReassignPullRequestResponse defines model for ReassignPullRequestResponse.
+type ReassignPullRequestResponse struct {
+	Pr PullRequest `json:"pr"`
+
+	// ReplacedBy user_id нового ревьювера
+	ReplacedBy openapi_types.UUID `json:"replaced_by"`
+}
+
+// SetUserActiveRequest defines model for SetUserActiveRequest.
+type SetUserActiveRequest struct {
+	IsActive bool               `json:"is_active"`
+	UserId   openapi_types.UUID `json:"user_id"`
+}
 
 // Team defines model for Team.
 type Team struct {
@@ -79,42 +111,30 @@ type Team struct {
 
 // TeamMember defines model for TeamMember.
 type TeamMember struct {
-	IsActive bool   `json:"is_active"`
-	UserId   string `json:"user_id"`
-	Username string `json:"username"`
+	IsActive bool               `json:"is_active"`
+	UserId   openapi_types.UUID `json:"user_id"`
+	Username string             `json:"username"`
 }
 
 // User defines model for User.
 type User struct {
-	IsActive bool   `json:"is_active"`
-	TeamName string `json:"team_name"`
-	UserId   string `json:"user_id"`
-	Username string `json:"username"`
+	IsActive bool               `json:"is_active"`
+	TeamName string             `json:"team_name"`
+	UserId   openapi_types.UUID `json:"user_id"`
+	Username string             `json:"username"`
+}
+
+// UserReviewResponse defines model for UserReviewResponse.
+type UserReviewResponse struct {
+	PullRequests []PullRequestShort `json:"pull_requests"`
+	UserId       openapi_types.UUID `json:"user_id"`
 }
 
 // TeamNameQuery defines model for TeamNameQuery.
 type TeamNameQuery = string
 
 // UserIdQuery defines model for UserIdQuery.
-type UserIdQuery = string
-
-// PostPullRequestCreateJSONBody defines parameters for PostPullRequestCreate.
-type PostPullRequestCreateJSONBody struct {
-	AuthorId        string `json:"author_id"`
-	PullRequestId   string `json:"pull_request_id"`
-	PullRequestName string `json:"pull_request_name"`
-}
-
-// PostPullRequestMergeJSONBody defines parameters for PostPullRequestMerge.
-type PostPullRequestMergeJSONBody struct {
-	PullRequestId string `json:"pull_request_id"`
-}
-
-// PostPullRequestReassignJSONBody defines parameters for PostPullRequestReassign.
-type PostPullRequestReassignJSONBody struct {
-	OldUserId     string `json:"old_user_id"`
-	PullRequestId string `json:"pull_request_id"`
-}
+type UserIdQuery = openapi_types.UUID
 
 // GetTeamGetParams defines parameters for GetTeamGet.
 type GetTeamGetParams struct {
@@ -128,23 +148,17 @@ type GetUsersGetReviewParams struct {
 	UserId UserIdQuery `form:"user_id" json:"user_id"`
 }
 
-// PostUsersSetIsActiveJSONBody defines parameters for PostUsersSetIsActive.
-type PostUsersSetIsActiveJSONBody struct {
-	IsActive bool   `json:"is_active"`
-	UserId   string `json:"user_id"`
-}
-
 // PostPullRequestCreateJSONRequestBody defines body for PostPullRequestCreate for application/json ContentType.
-type PostPullRequestCreateJSONRequestBody PostPullRequestCreateJSONBody
+type PostPullRequestCreateJSONRequestBody = CreatePullRequestRequest
 
 // PostPullRequestMergeJSONRequestBody defines body for PostPullRequestMerge for application/json ContentType.
-type PostPullRequestMergeJSONRequestBody PostPullRequestMergeJSONBody
+type PostPullRequestMergeJSONRequestBody = MergePullRequestRequest
 
 // PostPullRequestReassignJSONRequestBody defines body for PostPullRequestReassign for application/json ContentType.
-type PostPullRequestReassignJSONRequestBody PostPullRequestReassignJSONBody
+type PostPullRequestReassignJSONRequestBody = ReassignPullRequestRequest
 
 // PostTeamAddJSONRequestBody defines body for PostTeamAdd for application/json ContentType.
 type PostTeamAddJSONRequestBody = Team
 
 // PostUsersSetIsActiveJSONRequestBody defines body for PostUsersSetIsActive for application/json ContentType.
-type PostUsersSetIsActiveJSONRequestBody PostUsersSetIsActiveJSONBody
+type PostUsersSetIsActiveJSONRequestBody = SetUserActiveRequest

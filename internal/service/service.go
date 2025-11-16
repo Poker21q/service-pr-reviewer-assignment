@@ -5,7 +5,7 @@ type Service struct {
 	txManager txManager
 }
 
-func MustNew(storage storage, txManager txManager) *Service {
+func Must(storage storage, txManager txManager) *Service {
 	return &Service{
 		storage:   storage,
 		txManager: txManager,

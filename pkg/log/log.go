@@ -1,16 +1,15 @@
-// nolint
 package log
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
 )
 
-// Logger обертка над slog.Logger
 type Logger struct {
-	logger *slog.Logger
+	internal *slog.Logger
 }
 
 var (
@@ -18,100 +17,137 @@ var (
 	once         sync.Once
 )
 
-func MustNewLogger() *Logger {
+func Must() *Logger {
 	handler := slog.NewJSONHandler(os.Stdout, nil)
-	return &Logger{logger: slog.New(handler)}
+	return &Logger{
+		internal: slog.New(handler),
+	}
 }
 
-func getGlobalLogger() *Logger {
-	if globalLogger == nil {
-		once.Do(func() {
-			globalLogger = MustNewLogger()
-		})
-	}
+func getGlobal() *Logger {
+	once.Do(func() {
+		globalLogger = Must()
+	})
 	return globalLogger
-}
-
-func (l *Logger) InfoContext(ctx context.Context, msg string) {
-	l.logger.Info(msg, extractFields(ctx))
-}
-
-func (l *Logger) WarnContext(ctx context.Context, msg string) {
-	l.logger.Warn(msg, extractFields(ctx))
-}
-
-func (l *Logger) ErrorContext(ctx context.Context, msg string) {
-	l.logger.Error(msg, extractFields(ctx))
-}
-
-func Info(msg string) {
-	getGlobalLogger().InfoContext(context.Background(), msg)
-}
-
-func Warn(msg string) {
-	getGlobalLogger().WarnContext(context.Background(), msg)
-}
-
-func Error(msg string) {
-	getGlobalLogger().ErrorContext(context.Background(), msg)
-}
-
-func InfoContext(ctx context.Context, msg string) {
-	getGlobalLogger().InfoContext(ctx, msg)
-}
-
-func WarnContext(ctx context.Context, msg string) {
-	getGlobalLogger().WarnContext(ctx, msg)
-}
-
-func ErrorContext(ctx context.Context, msg string) {
-	getGlobalLogger().ErrorContext(ctx, msg)
-}
-
-type Field interface {
-	Key() string
-	Value() any
-}
-
-type simpleField struct {
-	key string
-	val any
-}
-
-func (f simpleField) Key() string { return f.key }
-func (f simpleField) Value() any  { return f.val }
-
-// NewField создает новое поле
-func NewField(key string, value any) Field {
-	return simpleField{key: key, val: value}
-}
-
-func fieldsToAny(fields []Field) []any {
-	out := make([]any, 0, len(fields)*2)
-	for _, f := range fields {
-		out = append(out, f.Key(), f.Value())
-	}
-	return out
 }
 
 type ctxKeyType struct{}
 
-var ctxKey = ctxKeyType{}
+var ctxKey ctxKeyType
 
-func WithContext(ctx context.Context, fields ...Field) context.Context {
+func WithContext(ctx context.Context, fields ...any) context.Context {
 	existing, _ := ctx.Value(ctxKey).([]any)
-	for _, f := range fields {
-		existing = append(existing, f.Key(), f.Value())
-	}
-	return context.WithValue(ctx, ctxKey, existing)
+	combined := make([]any, 0, len(existing)+len(fields))
+	combined = append(combined, existing...)
+	combined = append(combined, fields...)
+	return context.WithValue(ctx, ctxKey, combined)
 }
 
-func extractFields(ctx context.Context) []any {
+func (l *Logger) withContext(ctx context.Context) *slog.Logger {
 	if ctx == nil {
-		return nil
+		return l.internal
 	}
-	if fields, ok := ctx.Value(ctxKey).([]any); ok {
-		return fields
+
+	fields, _ := ctx.Value(ctxKey).([]any)
+	if len(fields) == 0 {
+		return l.internal
 	}
-	return nil
+
+	return l.internal.With(fields...)
+}
+
+func (l *Logger) InfoContext(ctx context.Context, msg string) {
+	l.withContext(ctx).Info(msg)
+}
+
+func (l *Logger) WarnContext(ctx context.Context, msg string) {
+	l.withContext(ctx).Warn(msg)
+}
+
+func (l *Logger) ErrorContext(ctx context.Context, msg string) {
+	l.withContext(ctx).Error(msg)
+}
+
+func (l *Logger) InfofContext(ctx context.Context, format string, args ...any) {
+	l.withContext(ctx).Info(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) WarnfContext(ctx context.Context, format string, args ...any) {
+	l.withContext(ctx).Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) ErrorfContext(ctx context.Context, format string, args ...any) {
+	l.withContext(ctx).Error(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Info(msg string) {
+	l.internal.Info(msg)
+}
+
+func (l *Logger) Warn(msg string) {
+	l.internal.Warn(msg)
+}
+
+func (l *Logger) Error(msg string) {
+	l.internal.Error(msg)
+}
+
+func (l *Logger) Infof(format string, args ...any) {
+	l.internal.Info(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Warnf(format string, args ...any) {
+	l.internal.Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Errorf(format string, args ...any) {
+	l.internal.Error(fmt.Sprintf(format, args...))
+}
+
+func InfoContext(ctx context.Context, msg string) {
+	getGlobal().InfoContext(ctx, msg)
+}
+
+func WarnContext(ctx context.Context, msg string) {
+	getGlobal().WarnContext(ctx, msg)
+}
+
+func ErrorContext(ctx context.Context, msg string) {
+	getGlobal().ErrorContext(ctx, msg)
+}
+
+func InfofContext(ctx context.Context, format string, args ...any) {
+	getGlobal().InfofContext(ctx, format, args...)
+}
+
+func WarnfContext(ctx context.Context, format string, args ...any) {
+	getGlobal().WarnfContext(ctx, format, args...)
+}
+
+func ErrorfContext(ctx context.Context, format string, args ...any) {
+	getGlobal().ErrorfContext(ctx, format, args...)
+}
+
+func Info(msg string) {
+	getGlobal().Info(msg)
+}
+
+func Warn(msg string) {
+	getGlobal().Warn(msg)
+}
+
+func Error(msg string) {
+	getGlobal().Error(msg)
+}
+
+func Infof(format string, args ...any) {
+	getGlobal().Infof(format, args...)
+}
+
+func Warnf(format string, args ...any) {
+	getGlobal().Warnf(format, args...)
+}
+
+func Errorf(format string, args ...any) {
+	getGlobal().Errorf(format, args...)
 }

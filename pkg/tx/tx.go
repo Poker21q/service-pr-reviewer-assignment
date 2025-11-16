@@ -5,6 +5,7 @@ import (
 
 	"github.com/avito-tech/go-transaction-manager/pgxv5"
 	"github.com/avito-tech/go-transaction-manager/trm/manager"
+	"github.com/avito-tech/go-transaction-manager/trm/settings"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -13,8 +14,8 @@ type Manager struct {
 	internal *manager.Manager
 }
 
-// MustNewManager создаёт новый менеджер транзакций.
-func MustNewManager(db pgxv5.Transactional) *Manager {
+// Must создаёт новый менеджер транзакций.
+func Must(db pgxv5.Transactional) *Manager {
 	return &Manager{
 		internal: manager.Must(pgxv5.NewDefaultFactory(db)),
 	}
@@ -26,12 +27,8 @@ func (m *Manager) execWithIsoLevel(
 	fn func(ctx context.Context) error,
 ) error {
 	settings := pgxv5.MustSettings(
-		nil,
-		pgxv5.WithTxOptions(
-			pgx.TxOptions{
-				IsoLevel: level,
-			},
-		),
+		settings.Must(),
+		pgxv5.WithTxOptions(pgx.TxOptions{IsoLevel: level}),
 	)
 	return m.internal.DoWithSettings(ctx, settings, fn)
 }

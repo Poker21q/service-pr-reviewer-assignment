@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"os"
 
 	"service-pr-reviewer-assignment/internal/app"
@@ -13,26 +13,20 @@ import (
 
 func main() {
 	err := godotenv.Load()
-	if err != nil {
-		log.Error(
-			fmt.Sprintf("failed to load env %s", err.Error()),
-		)
+	if err != nil && !os.IsNotExist(err) {
+		log.Errorf("failed to load env %v", err)
 		os.Exit(1)
 	}
 
 	cfg, err := config.Load()
 	if err != nil {
-		log.Error(
-			fmt.Sprintf("cannot load config: %s", err.Error()),
-		)
+		log.Errorf("cannot load config: %v", err)
 		os.Exit(1)
 	}
 
-	err = app.Run(cfg)
+	err = app.Run(context.Background(), cfg)
 	if err != nil {
-		log.Error(
-			fmt.Sprintf("app exited with error: %s", err.Error()),
-		)
+		log.Errorf("app exited with error: %v", err)
 		os.Exit(1)
 	}
 }

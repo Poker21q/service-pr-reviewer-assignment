@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -39,7 +40,7 @@ func Load() (*Config, error) {
 	}
 
 	if err := cfg.validate(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
 	return cfg, nil
@@ -49,23 +50,27 @@ func (c *Config) validate() error {
 	var errs error
 
 	if c.Server.Port == "" {
-		errs = errors.Join(errs, errors.New("missing SERVER_PORT environment variable"))
+		errs = errors.Join(errs, errors.New("SERVER_PORT environment variable"))
 	}
 	if c.Postgres.User == "" {
-		errs = errors.Join(errs, errors.New("missing POSTGRES_USER environment variable"))
+		errs = errors.Join(errs, errors.New("POSTGRES_USER environment variable"))
 	}
 	if c.Postgres.Password == "" {
-		errs = errors.Join(errs, errors.New("missing POSTGRES_PASSWORD environment variable"))
+		errs = errors.Join(errs, errors.New("POSTGRES_PASSWORD environment variable"))
 	}
 	if c.Postgres.Host == "" {
-		errs = errors.Join(errs, errors.New("missing POSTGRES_HOST environment variable"))
+		errs = errors.Join(errs, errors.New("POSTGRES_HOST environment variable"))
 	}
 	if c.Postgres.Port == "" {
-		errs = errors.Join(errs, errors.New("missing POSTGRES_PORT environment variable"))
+		errs = errors.Join(errs, errors.New("POSTGRES_PORT environment variable"))
 	}
 	if c.Postgres.DB == "" {
-		errs = errors.Join(errs, errors.New("missing POSTGRES_DB environment variable"))
+		errs = errors.Join(errs, errors.New("POSTGRES_DB environment variable"))
 	}
 
-	return errs
+	if errs != nil {
+		return fmt.Errorf("missing required environment variables: %w", errs)
+	}
+
+	return nil
 }

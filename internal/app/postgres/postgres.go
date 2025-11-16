@@ -12,14 +12,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// NewConnPool создает пул соединений PostgreSQL с retry и взвешенным джиттером.
-func NewConnPool(ctx context.Context, cfg config.Postgres) (*pgxpool.Pool, error) {
-	const (
-		maxRetries = 5
-		baseDelay  = 500 * time.Millisecond
-		maxJitter  = 200 * time.Millisecond
-	)
+const (
+	maxRetries = 5
+	baseDelay  = 500 * time.Millisecond
+	maxJitter  = 200 * time.Millisecond
+)
 
+func NewConnPool(ctx context.Context, cfg config.Postgres, logger *log.Logger) (*pgxpool.Pool, error) {
 	connStr := newDsn(cfg)
 	pgxCfg, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
@@ -36,28 +35,14 @@ func NewConnPool(ctx context.Context, cfg config.Postgres) (*pgxpool.Pool, error
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		pool, err := pgxpool.NewWithConfig(ctx, pgxCfg)
 		if err == nil {
-			pingErr := pool.Ping(ctx)
-			if pingErr == nil {
+			err = pool.Ping(ctx)
+			if err == nil {
 				return pool, nil
 			}
-
-			err = pingErr
 		}
 
-		log.Warn(
-			fmt.Sprintf("attempt %d: failed to connect to database: %s", attempt+1, err.Error()),
-		)
+		logger.Errorf("attempt %d: failed to connect to database: %v", attempt+1, err)
 
-		// Задержка растет линейно с номером попытки (baseDelay * (attempt+1))
-		// плюс случайная вариативность jitter до maxJitter, чтобы избежать "эффекта лавины".
-		//
-		// | Попытка | baseDelay*(attempt+1) | jitter | sleep = baseDelay*(attempt+1)+jitter |
-		// |---------|-----------------------|--------|-------------------------------------|
-		// | 1       | 500ms                 | 100ms  | 600ms                               |
-		// | 2       | 1000ms                | 50ms   | 1050ms                              |
-		// | 3       | 1500ms                | 150ms  | 1650ms                              |
-		// | 4       | 2000ms                | 20ms   | 2020ms                              |
-		// | 5       | 2500ms                | 180ms  | 2680ms                              |
 		jitter := time.Duration(rand.Int63n(int64(maxJitter)))
 		time.Sleep(baseDelay*time.Duration(attempt+1) + jitter)
 	}
