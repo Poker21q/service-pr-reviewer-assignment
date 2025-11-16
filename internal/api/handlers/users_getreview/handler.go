@@ -9,15 +9,14 @@ import (
 	"service-pr-reviewer-assignment/internal/generated/api/dto"
 	"service-pr-reviewer-assignment/internal/pkg/response"
 	"service-pr-reviewer-assignment/internal/service/entities"
-	"service-pr-reviewer-assignment/pkg/log"
 
 	"github.com/google/uuid"
 )
 
 type Logger interface {
 	InfoContext(ctx context.Context, msg string)
-	WarnfContext(ctx context.Context, format string, args ...interface{})
 	ErrorfContext(ctx context.Context, format string, args ...interface{})
+	LogCtx(ctx context.Context, fields ...any) context.Context
 }
 
 type Service interface {
@@ -44,16 +43,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	userIDStr := r.URL.Query().Get("user_id")
 	if userIDStr == "" {
-		h.logger.WarnfContext(ctx, "user_id parameter is required")
+		h.logger.ErrorfContext(ctx, "user_id parameter is required")
 		response.Error(w, http.StatusBadRequest, dto.BADREQUEST, "user_id parameter is required")
 		return
 	}
 
-	ctx = log.WithContext(ctx, "user_id", userIDStr)
+	ctx = h.logger.LogCtx(ctx, "user_id", userIDStr)
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		h.logger.WarnfContext(ctx, "failed to parse user_id as uuid: %v", err)
+		h.logger.ErrorfContext(ctx, "failed to parse user_id as uuid: %v", err)
 		response.Error(w, http.StatusBadRequest, dto.BADREQUEST, "invalid user_id format")
 		return
 	}

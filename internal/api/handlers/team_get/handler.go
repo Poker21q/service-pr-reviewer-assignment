@@ -9,13 +9,12 @@ import (
 	"service-pr-reviewer-assignment/internal/generated/api/dto"
 	"service-pr-reviewer-assignment/internal/pkg/response"
 	"service-pr-reviewer-assignment/internal/service/entities"
-	"service-pr-reviewer-assignment/pkg/log"
 )
 
 type Logger interface {
 	InfoContext(ctx context.Context, msg string)
-	WarnfContext(ctx context.Context, format string, args ...interface{})
 	ErrorfContext(ctx context.Context, format string, args ...interface{})
+	LogCtx(ctx context.Context, fields ...any) context.Context
 }
 
 type Service interface {
@@ -42,12 +41,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	teamName := r.URL.Query().Get("team_name")
 	if teamName == "" {
-		h.logger.WarnfContext(ctx, "team_name parameter is required")
+		h.logger.ErrorfContext(ctx, "team_name parameter is required")
 		response.Error(w, http.StatusBadRequest, dto.BADREQUEST, "team_name parameter is required")
 		return
 	}
 
-	ctx = log.WithContext(ctx, "team_name", teamName)
+	ctx = h.logger.LogCtx(ctx, "team_name", teamName)
 
 	team, err := h.service.GetTeam(ctx, teamName)
 	if err != nil {

@@ -86,6 +86,10 @@ func runServer(ctx context.Context, logger *log.Logger, server *http.Server, por
 }
 
 func waitForShutdown(ctx context.Context, serverErrors <-chan error, isShuttingDown *atomic.Bool) error {
+	defer func() {
+		isShuttingDown.Store(true)
+	}()
+
 	select {
 	case <-ctx.Done():
 		return nil

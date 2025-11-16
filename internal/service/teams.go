@@ -83,7 +83,7 @@ func (s *Service) GetTeam(
 func validateMembers(members []entities.User) error {
 	for _, member := range members {
 		if err := validateUsername(member.Name); err != nil {
-			return &entities.ErrUserNameValidation{Reason: member.Name}
+			return err
 		}
 	}
 	return nil

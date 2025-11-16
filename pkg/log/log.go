@@ -35,7 +35,7 @@ type ctxKeyType struct{}
 
 var ctxKey ctxKeyType
 
-func WithContext(ctx context.Context, fields ...any) context.Context {
+func (l *Logger) LogCtx(ctx context.Context, fields ...any) context.Context {
 	existing, _ := ctx.Value(ctxKey).([]any)
 	combined := make([]any, 0, len(existing)+len(fields))
 	combined = append(combined, existing...)

@@ -1,22 +1,27 @@
 package request_logging_context
 
 import (
+	"context"
 	"net/http"
-
-	"service-pr-reviewer-assignment/pkg/log"
 )
 
-func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+type Logger interface {
+	LogCtx(ctx context.Context, fields ...any) context.Context
+}
 
-		ctx = log.WithContext(ctx,
-			"path", r.URL.Path,
-			"method", r.Method,
-		)
+func Middleware(logger Logger) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 
-		r = r.WithContext(ctx)
+			ctx = logger.LogCtx(ctx,
+				"path", r.URL.Path,
+				"method", r.Method,
+			)
 
-		next.ServeHTTP(w, r)
-	})
+			r = r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

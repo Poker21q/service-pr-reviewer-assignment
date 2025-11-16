@@ -31,7 +31,7 @@ func Must(
 	router := mux.NewRouter()
 
 	router.Use(panic_recover.Middleware(logger))
-	router.Use(request_logging_context.Middleware)
+	router.Use(request_logging_context.Middleware(logger))
 	router.Use(graceful_shutdown.Middleware(isShuttingDown, ongoingCtx))
 
 	router.Handle("/healthcheck", healthcheck.NewHandler(isShuttingDown, logger)).Methods(http.MethodHead)

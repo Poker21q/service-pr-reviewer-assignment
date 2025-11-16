@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"unicode"
 
@@ -81,15 +80,15 @@ func (s *Service) SetUserActiveStatus(
 
 func validateUsername(username string) error {
 	if len(username) < 2 {
-		return errors.New("username too short")
+		return &entities.ErrUserNameValidation{Reason: "username too short"}
 	}
 	if len(username) > 50 {
-		return errors.New("username too long")
+		return &entities.ErrUserNameValidation{Reason: "username too long"}
 	}
 
 	for _, r := range username {
 		if !unicode.IsLetter(r) || r > unicode.MaxASCII {
-			return errors.New("username must contain only english letters")
+			return &entities.ErrUserNameValidation{Reason: "username must contain only english letters"}
 		}
 	}
 

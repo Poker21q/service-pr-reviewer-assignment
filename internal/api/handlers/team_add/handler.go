@@ -10,13 +10,12 @@ import (
 	"service-pr-reviewer-assignment/internal/generated/api/dto"
 	"service-pr-reviewer-assignment/internal/pkg/response"
 	"service-pr-reviewer-assignment/internal/service/entities"
-	"service-pr-reviewer-assignment/pkg/log"
 )
 
 type Logger interface {
 	InfoContext(ctx context.Context, msg string)
-	WarnfContext(ctx context.Context, format string, args ...interface{})
 	ErrorfContext(ctx context.Context, format string, args ...interface{})
+	LogCtx(ctx context.Context, fields ...any) context.Context
 }
 
 type Service interface {
@@ -44,19 +43,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.Team
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.WarnfContext(ctx, "decode body failed: %v", err)
+		h.logger.ErrorfContext(ctx, "decode body failed: %v", err)
 		response.Error(w, http.StatusBadRequest, dto.BADREQUEST, "decode body failed"+err.Error())
 		return
 	}
 
-	ctx = log.WithContext(ctx,
+	ctx = h.logger.LogCtx(ctx,
 		"team_name", req.TeamName,
 		"members", req.Members,
 	)
 
 	teamName, users, err := converters.TeamFromDTO(req)
 	if err != nil {
-		h.logger.WarnfContext(ctx, "convert dto to entities failed: %v", err)
+		h.logger.ErrorfContext(ctx, "convert dto to entities failed: %v", err)
 		response.Error(w, http.StatusBadRequest, dto.BADREQUEST, "invalid team data")
 		return
 	}

@@ -10,15 +10,14 @@ import (
 	"service-pr-reviewer-assignment/internal/generated/api/dto"
 	"service-pr-reviewer-assignment/internal/pkg/response"
 	"service-pr-reviewer-assignment/internal/service/entities"
-	"service-pr-reviewer-assignment/pkg/log"
 
 	"github.com/google/uuid"
 )
 
 type Logger interface {
 	InfoContext(ctx context.Context, msg string)
-	WarnfContext(ctx context.Context, format string, args ...interface{})
 	ErrorfContext(ctx context.Context, format string, args ...interface{})
+	LogCtx(ctx context.Context, fields ...any) context.Context
 }
 
 type Service interface {
@@ -47,12 +46,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.CreatePullRequestRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.WarnfContext(ctx, "decode body failed: %v", err)
+		h.logger.ErrorfContext(ctx, "decode body failed: %v", err)
 		response.Error(w, http.StatusBadRequest, dto.BADREQUEST, "decode body failed"+err.Error())
 		return
 	}
 
-	ctx = log.WithContext(ctx,
+	ctx = h.logger.LogCtx(ctx,
 		"pull_request_id", req.PullRequestId,
 		"pull_request_name", req.PullRequestName,
 		"author_id", req.AuthorId,

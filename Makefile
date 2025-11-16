@@ -1,20 +1,15 @@
-ifeq ($(OS),Windows_NT)
-	BIN_EXT := .exe
-else
-	BIN_EXT :=
-endif
-
 ifneq (,$(wildcard .env))
 	include .env
 	export $(shell sed 's/=.*//' .env)
 endif
+
 BIN_DIR := bin
 API_DIR := api
 
-GOLANGCI_LINT_BIN := $(BIN_DIR)/golangci-lint$(BIN_EXT)
-OAPI_CODEGEN_BIN := $(BIN_DIR)/oapi-codegen$(BIN_EXT)
-GOFUMPT_BIN := $(BIN_DIR)/gofumpt$(BIN_EXT)
-GOOSE_BIN := $(BIN_DIR)/goose$(BIN_EXT)
+GOLANGCI_LINT_BIN := $(BIN_DIR)/golangci-lint
+OAPI_CODEGEN_BIN := $(BIN_DIR)/oapi-codegen
+GOFUMPT_BIN := $(BIN_DIR)/gofumpt
+GOOSE_BIN := $(BIN_DIR)/goose
 
 API_SCHEMA := openapi.yaml
 CODEGEN_CONFIG := codegen.yaml
@@ -24,9 +19,9 @@ GOOSE_DRIVER := postgres
 
 GOOSE_DBSTRING := postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)
 
-.PHONY: all devenv-start tools codegen fmt lint migrate-up migrate-down migrate-status
+.PHONY: all tidy devenv-start tools codegen fmt lint run migrate-up migrate-down migrate-status
 
-all: tidy codegen lint fmt devenv-start
+all: tidy tools codegen lint fmt devenv-start run migrate-up
 
 tidy:
 	@go mod tidy
