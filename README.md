@@ -25,8 +25,9 @@
 - **Структурированное логирование** на основе slog с возможностью обогащения контекста запросов
 
 ```go
-ctx = log.WithContext(ctx, "user_id", userID, "request_id", requestID)
-log.InfoContext(ctx, "Processing request")
+logger := log.Must()
+ctx = logger.LogCtx(ctx, "user_id", userID, "request_id", requestID)
+logger.InfoContext(ctx, "Processing request")
 
 // Результат в JSON:
 {"time": "...", "level": "INFO", "msg": "Processing request", "user_id": "some_id", "request_id": "some_id"}
