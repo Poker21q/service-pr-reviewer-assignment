@@ -33,7 +33,7 @@ dev: devenv-start debug
 devenv-start:
 	@cp -f .env.example .env
 
-debug:
+run: devenv-start
 	@docker compose --env-file .env up -d
 
 tools: $(OAPI_CODEGEN_BIN) $(GOFUMPT_BIN) $(GOOSE_BIN) $(GOLANGCI_LINT_BIN)
