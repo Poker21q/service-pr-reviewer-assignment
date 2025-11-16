@@ -12,6 +12,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
 	github.com/oapi-codegen/oapi-codegen/v2 v2.5.1
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/pressly/goose/v3 v3.26.0
 	mvdan.cc/gofumpt v0.9.2
 )
@@ -160,7 +161,6 @@ require (
 	github.com/nishanths/exhaustive v0.12.0 // indirect
 	github.com/nishanths/predeclared v0.2.2 // indirect
 	github.com/nunnatsa/ginkgolinter v0.19.1 // indirect
-	github.com/oapi-codegen/runtime v1.1.2 // indirect
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect

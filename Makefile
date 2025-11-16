@@ -26,7 +26,10 @@ GOOSE_DBSTRING := postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HO
 
 .PHONY: all devenv-start tools codegen fmt lint migrate-up migrate-down migrate-status
 
-all: codegen lint fmt devenv-start
+all: tidy codegen lint fmt devenv-start
+
+tidy:
+	go mod tidy
 
 devenv-start:
 	@cp -f .env.example .env
