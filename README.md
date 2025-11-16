@@ -19,21 +19,15 @@
 - **Transaction manager** на базе avito-tech/go-transaction-manager
 - **Разные уровни изоляции** для операций: SERIALIZABLE для записи, REPEATABLE READ для чтения
 
-### Фишки
-- **Graceful Shutdown** с health checks и circuit breaker(на мидлваре) (по гайдам [victoriametrics](https://victoriametrics.com/blog/go-graceful-shutdown))
-- **Panic recovery middleware**
-- **Структурированное логирование** на основе slog с возможностью обогащением контекста запросов
-- **Простой слой storage**
+### Production-ready фичи
+- **Graceful Shutdown** с health checks и circuit breaker на мидлваре (по гайдам [victoriametrics](https://victoriametrics.com/blog/go-graceful-shutdown))
+- **Panic recovery middleware** - сервис не падает при неожиданных ошибках
+- **Структурированное логирование** на основе slog с возможностью обогащения контекста запросов
+- **Query-билдер** для динамических SQL-запросов
+- **Конфигурация через переменные окружения** -
 
-```go
-ctx = log.WithContext(ctx, "user_id", userID, "request_id", requestID) # Можно было сделать методом логгера, не успевал рефакторить
-log.InfoContext(ctx, "Processing request")
-
-{"Level": "INFO", "user_id": "some_id", "request_id": "some_id", msg: "Processing request"}
-```
-
-### Инструменты
-- **Автоматизация кодогенерации** из OpenAPI спецификации
+### Инструменты и автоматизация
+- **Кодогенерация** из OpenAPI спецификации
 - **Вендоринг инструментов** сборки и линтинга (openapi-codegen, golangci-lint, gofumpt, goose)
 - **Миграции БД** через Goose с версионированием
 - **Линтинг** через golangci-lint
@@ -42,29 +36,47 @@ log.InfoContext(ctx, "Processing request")
 - **Интерфейсная архитектура** для легкого тестирования и подмены реализаций
 - **Модульная структура** для простого добавления новой функциональности
 
-### Минусы и допущения
+## Особенности реализации
 
-- **Поменял openapi.yaml** - все id типа данных uuidv4
-- **Не покрыл тестами** - физически не успел покрыть юнитами и e2e (можно потестить через SwaggerUI)
+### Логирование с контекстом
+```go
+ctx = log.WithContext(ctx, "user_id", userID, "request_id", requestID)
+log.InfoContext(ctx, "Processing request")
 
-## Инструменты
+// Результат в JSON:
+{"time": "...", "level": "INFO", "msg": "Processing request", "user_id": "some_id", "request_id": "some_id"}
+```
 
+### Простой и storage слой
+Минималистичная реализация без избыточных абстракций, но с поддержкой транзакций.
+
+## Допущения
+
+- **Модификация OpenAPI спецификации** - изменены типы id на uuidv4, добавлены новые типы ошибок и валидация
+- **Отсутствие тестового покрытия** - физически не успел покрыть юнитами и e2e (можно тестировать через SwaggerUI)
+- **Контекстное логирование через WithContext** - можно было реализовать методом логгера, но не успел рефакторить
+
+## Быстрый старт
+
+### Установка инструментов
 ```bash
 make tools
 ```
 
-## Подготовка окружения
-
+### Подготовка окружения
 ```bash
-make all # кодогенерация, линтинг, форматирование и подготовка переменных окружения
+make all  # кодогенерация, линтинг, форматирование и подготовка переменных окружения
 ```
 
-## Запуск сервиса с PostgreSQL # специально не изолировал порт бд для того, чтобы подключиться через goose
+### Запуск сервиса с PostgreSQL
+```bash
+docker-compose up
+```
 
-## Миграции БД
-
+### Применение миграций
 ```bash
 make migrate-up
 ```
 
-## Тестить ручками..., сори.
+### Тестирование
+API готово к тестированию через SwaggerUI. Извините за отсутствие автоматических тестов - временные ограничения.
