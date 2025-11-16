@@ -13,14 +13,16 @@
 
 Каждый слой изолирован и зависит только от интерфейсов внутренних слоев. Используется **Dependency Injection** для передачи зависимостей между компонентами.
 
-## Преимущества реализации
-
-### Управление транзакциями
+### Фичи
 - **Transaction manager** на базе avito-tech/go-transaction-manager
 - **Разные уровни изоляции** для операций: SERIALIZABLE для записи, REPEATABLE READ для чтения
-
-### фичи
-- **Graceful Shutdown** с health checks и circuit breaker на мидлваре (по гайдам [victoriametrics](https://victoriametrics.com/blog/go-graceful-shutdown))
+- **Graceful Shutdown** (по гайдам [victoriametrics](https://victoriametrics.com/blog/go-graceful-shutdown))
+- **Query-билдер** для динамических SQL-запросов
+- **Конфигурация через переменные окружения**
+- **Кодогенерация** из OpenAPI спецификации
+- **Вендоринг инструментов** сборки и линтинга (openapi-codegen, golangci-lint, gofumpt, goose)
+- **Миграции БД** через Goose
+- **Линтинг** через golangci-lint
 - **Panic recovery middleware** - сервис не падает при неожиданных ошибках
 - **Структурированное логирование** на основе slog с возможностью обогащения контекста запросов
 
@@ -30,17 +32,8 @@ ctx = logger.LogCtx(ctx, "user_id", userID, "request_id", requestID)
 logger.InfoContext(ctx, "Processing request")
 
 // Результат в JSON:
-{"time": "...", "level": "INFO", "msg": "Processing request", "user_id": "some_id", "request_id": "some_id"}
+{"level": "INFO", "msg": "Processing request", "user_id": "some_id", "request_id": "some_id"}
 ```
-
-- **Query-билдер** для динамических SQL-запросов
-- **Конфигурация через переменные окружения**
-
-### Инструменты и автоматизация
-- **Кодогенерация** из OpenAPI спецификации
-- **Вендоринг инструментов** сборки и линтинга (openapi-codegen, golangci-lint, gofumpt, goose)
-- **Миграции БД** через Goose с версионированием
-- **Линтинг** через golangci-lint
 
 ## Допущения
 
